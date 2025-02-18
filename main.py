@@ -6,36 +6,36 @@ from dotenv import load_dotenv
 import os
 from openai import OpenAI
 
-# def clear_output_files(file_paths):
-#     for file_path in file_paths:
-#         if os.path.exists(file_path):
-#             os.remove(file_path)
+def clear_output_files(file_paths):
+    for file_path in file_paths:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
-# file_paths = [
-#     "output_files/reports.json",
-#     "output_files/report.ipynb",
-#     "output_files/report.md",
-#     "output_files/output_prompts.txt"
-# ]
+file_paths = [
+    "output_files/reports.json",
+    "output_files/report.ipynb",
+    "output_files/report.md",
+    "output_files/output_prompts.txt"
+]
 
-# clear_output_files(file_paths)
+clear_output_files(file_paths)
 
 
-# industry = input("Enter the industry: ")
+industry = input("Enter the industry: ")
 topics = input("Enter the topics (separated by commas): ")
 
 
-# load_dotenv()
-# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-# for topic in topics.split(","):
-#     print(f"Generating prompts for {topic}")
-#     generate_prompt(industry, topic, client)
-#     print(f"Generating report for {topic}")
-#     generate_report(topic, client)
-#     print(f"Finished {topic}")
-#     print("--------------------------------")
+for topic in topics.split(","):
+    print(f"Generating prompts for {topic}")
+    generate_prompt(industry, topic, client)
+    print(f"Generating report for {topic}")
+    generate_report(topic, client)
+    print(f"Finished {topic}")
+    print("--------------------------------")
 
 filter_reports()
 

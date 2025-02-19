@@ -15,7 +15,6 @@ os.makedirs('output_files', exist_ok=True)
 
 file_paths = [
     "output_files/reports.json",
-    "output_files/report.ipynb",
     "output_files/report.md",
     "output_files/output_prompts.txt"
 ]

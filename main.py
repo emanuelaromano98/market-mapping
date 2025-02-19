@@ -11,6 +11,8 @@ def clear_output_files(file_paths):
         if os.path.exists(file_path):
             os.remove(file_path)
 
+os.makedirs('output_files', exist_ok=True)
+
 file_paths = [
     "output_files/reports.json",
     "output_files/report.ipynb",

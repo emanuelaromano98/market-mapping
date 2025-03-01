@@ -3,12 +3,12 @@ import os
 import json
 
 
-def generate_report(topic, client, model):
+async def generate_report(topic, client, model, send_status_update):
     class ReportGeneration(BaseModel):
         report: str
         sources: list[str]
 
-    prompts = open("output_files/output_prompts.txt", "r").readlines()
+    prompts = open("backend/output_files/output_prompts.txt", "r").readlines()
     reports = []
     for prompt in prompts:
         prompt = prompt.strip()
@@ -17,6 +17,7 @@ def generate_report(topic, client, model):
             while i < len(prompt) and (prompt[i].isdigit() or prompt[i] in '. '):
                 i += 1
             prompt = "Question: " + prompt[i:].strip()
+        await send_status_update(f"Generating for prompt: {prompt.split(':')[1].strip()}")
         completion = client.beta.chat.completions.parse(
             model=model,
             messages=[
@@ -35,8 +36,8 @@ def generate_report(topic, client, model):
         })
 
     existing_reports = []
-    if os.path.exists("output_files/reports.json"):
-        with open("output_files/reports.json", "r") as f:
+    if os.path.exists("backend/output_files/reports.json"):
+        with open("backend/output_files/reports.json", "r") as f:
             try:
                 existing_reports = json.load(f)
             except json.JSONDecodeError:
@@ -44,6 +45,6 @@ def generate_report(topic, client, model):
 
     all_reports = existing_reports + reports
 
-    with open("output_files/reports.json", "w") as f:
+    with open("backend/output_files/reports.json", "w") as f:
         json.dump(all_reports, f, indent=4)
 

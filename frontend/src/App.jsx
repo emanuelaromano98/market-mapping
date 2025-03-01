@@ -151,20 +151,31 @@ function App() {
             </div>
             {error && <p className="error">{error}</p>}
           </label>
-          <label>
-            <span>Model</span>
-            <select
-              value={model}
+          <label className="model-container">
+            <div className="model-container-inner">
+              <span>LLM Model</span>
+              <select
+                value={model}
               onChange={(e) => setModel(e.target.value)}
             >
               <option value="gpt-4o-2024-08-06">GPT-4o</option>
               <option value="gpt-4o-mini-2024-07-18">GPT-4o-mini</option>
               <option value="o3-mini-2025-01-31">GPT-o3-mini</option>
               <option value="gpt-4-turbo-2024-04-09">GPT-4-turbo</option>
-            </select>
+              </select>
+            </div>
+            <div className="model-container-inner">
+              <span>Filtering Model</span>
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+            >
+                <option value="all-MiniLM-L6-v2">MiniLM</option>
+              </select>
+            </div>
           </label>
           <label>
-            <span>Confidence Threshold</span>
+            <span>Similarity Threshold</span>
             <select
               value={threshold}
               onChange={(e) => setThreshold(parseFloat(e.target.value))}

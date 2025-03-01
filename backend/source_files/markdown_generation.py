@@ -6,7 +6,7 @@ def generate_markdown(topics, reports):
     if isinstance(reports, str):
         reports = json.loads(reports)
 
-    for topic in topics.split(","):
+    for topic in topics:
         markdown_content = f"# {topic}\n\n"
 
         for report in reports:
@@ -19,6 +19,6 @@ def generate_markdown(topics, reports):
                         markdown_content += f"- {source}\n"
                     markdown_content += "\n"
 
-        with open("output_files/report.md", "a") as f:
+        with open("backend/output_files/report.md", "a") as f:
             f.write("\n" + markdown_content)
 

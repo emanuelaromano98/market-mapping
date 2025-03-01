@@ -204,3 +204,9 @@ input[type="number"]::-webkit-inner-spin-button {
   width: 406px;
   height: 30%;
 }
+
+.model-container {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}

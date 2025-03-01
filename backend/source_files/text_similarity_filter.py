@@ -6,7 +6,7 @@ import json
 def filter_reports(model, threshold):
     model = SentenceTransformer(model)
 
-    reports = json.load(open("output_files/reports.json", "r"))
+    reports = json.load(open("backend/output_files/reports.json", "r"))
     report_texts = [report['report'] for report in reports]
 
     embeddings = model.encode(report_texts, convert_to_tensor=True)
@@ -30,7 +30,7 @@ def filter_reports(model, threshold):
 
     reports = [report for i, report in enumerate(reports) if i not in removed_reports_idx]
 
-    with open("output_files/reports.json", "w") as f:
+    with open("backend/output_files/reports.json", "w") as f:
         json.dump(reports, f, indent=4)
 
     print(f"Removed {len(removed_reports_idx)} reports due to similarity")

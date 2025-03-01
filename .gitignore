@@ -3,3 +3,4 @@ __pycache__
 /venv/
 output_files/output_prompts.txt
 output_files/reports.json
+output_files/report.pdf

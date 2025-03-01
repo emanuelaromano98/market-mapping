@@ -20,5 +20,5 @@ def generate_prompt(industry, topic, client, model):
 
     prompt_generation = completion.choices[0].message.parsed
 
-    with open("output_files/output_prompts.txt", "w") as f:
+    with open("backend/output_files/output_prompts.txt", "w") as f:
         f.write(f"{prompt_generation.output_text}\n")

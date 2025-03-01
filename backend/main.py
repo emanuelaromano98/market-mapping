@@ -16,12 +16,11 @@ from fastapi.routing import APIRoute
 
 app = FastAPI()
 
-# Add CORS middleware BEFORE any routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # More permissive for development
+    allow_origins=["*"], 
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
@@ -77,7 +76,8 @@ class IndustryRequest(BaseModel):
     topics: list[str]
     model: str = "gpt-4o-2024-08-06"
     threshold: float = 0.85
-    api_key: str
+    model_for_filtering: str = "all-MiniLM-L6-v2"
+    api_key: str 
 
 @app.post("/generate-report")
 async def generate_industry_report(request: IndustryRequest):
@@ -91,13 +91,13 @@ async def generate_industry_report(request: IndustryRequest):
         generate_prompt(request.industry, topic, client, request.model)
         
         await send_status_update(f"Generating report for {topic}...")
-        generate_report(topic, client, request.model)
+        await generate_report(topic, client, request.model, send_status_update)
 
     await send_status_update("Filtering reports...")
-    filter_reports(request.model, request.threshold)
+    filter_reports(model=request.model_for_filtering, threshold=request.threshold)
 
     try:
-        with open("output_files/reports.json", "r") as f:
+        with open("backend/output_files/reports.json", "r") as f:
             reports = f.read()
         if not reports:
             await send_status_update("No reports generated")

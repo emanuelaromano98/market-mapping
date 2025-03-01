@@ -12,6 +12,9 @@ function App() {
   const [error, setError] = useState("")
   const [formSubmitted, setFormSubmitted] = useState(false)
   const [status, setStatus] = useState("");
+  const [formSubmittedClicked, setFormSubmittedClicked] = useState(false)
+  const [submitError, setSubmitError] = useState("")
+  
   const baseAPIUrl = "http://localhost:8000"
   
 
@@ -23,20 +26,21 @@ function App() {
     return () => ws.close();
   }, []);
 
-
   const numbers = Array.from(
     { length: ((1.0 - 0.05) / 0.05) + 1 },
     (_, i) => Number((0.05 + (i * 0.05)).toFixed(2))
   )
 
   const handleAddTopic = (topic, e) => {
+    e.preventDefault()
     if (error) {
       setError("")
     }
-    e.preventDefault()
     if (topic.trim() !== "" && !topics.includes(topic)) {
       setTopics([...topics, topic])
       setTopic("")
+    } else if (topic.trim() === "") {
+      setError("Topic cannot be empty")
     } else {
       setError("Topic already exists")
     }
@@ -47,9 +51,28 @@ function App() {
     setTopics(topics.filter((t) => t !== topic))
   }
 
+  useEffect(() => {
+    if (topics.length !== 0 && apiKey.trim() !== "" && industry.trim() !== "" && formSubmittedClicked) {
+      setSubmitError("")
+    } else if (formSubmittedClicked) {
+      if (topics.length === 0) {
+        setSubmitError("Please fill in all fields")
+      } else if (apiKey.trim() === "") {
+        setSubmitError("Please fill in all fields")
+      } else if (industry.trim() === "") {
+        setSubmitError("Please fill in all fields")
+      }
+    }
+  }, [topics, apiKey, industry, formSubmittedClicked])
+
 
   const handleSubmitForm = async (e) => {
     e.preventDefault()
+    setFormSubmittedClicked(true)
+    if (industry.trim() === "" || topics.length === 0 || apiKey.trim() === "") {
+      setSubmitError("Please fill in all fields")
+      return
+    }
     setFormSubmitted(true)
     try {
       const response = await fetch(`${baseAPIUrl}/generate-report`, {
@@ -82,6 +105,11 @@ function App() {
           <label>
             <span>Industry Name</span>
             <input 
+              style={
+                (industry.trim() === "" && formSubmittedClicked) 
+                  ? { border: "1px solid red" } 
+                  : {}
+              }
               type="text" 
               value={industry} 
               onChange={(e) => setIndustry(e.target.value)}
@@ -92,6 +120,11 @@ function App() {
             <span>Topics</span>
             <div className="topics-container">
               <input 
+                style={
+                  (topics.length === 0 && formSubmittedClicked) 
+                    ? { border: "1px solid red" } 
+                    : {}
+                }
                 type="text" 
                 value={topic} 
                 onChange={(e) => setTopic(e.target.value)}
@@ -144,13 +177,19 @@ function App() {
           <label>
             <span>OpenAI API Key</span>
             <input 
-              type="password" 
-              value={apiKey} 
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-..."
-            />
+                style={
+                  (apiKey.trim() === "" && formSubmittedClicked) 
+                    ? { border: "1px solid red" } 
+                    : {}
+                }
+                type="password" 
+                value={apiKey} 
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-..."
+                />
           </label>
           <button className="generate-report-button" onClick={(e) => handleSubmitForm(e)} type="submit">Generate Report</button>
+          {submitError && <div className="error">{submitError}</div>}
         </form>  
         {formSubmitted && (
           <div className="report-container">
@@ -158,7 +197,6 @@ function App() {
             <div className="status-message">
               {status || "Initializing..."}
             </div>
-            {error && <div className="error-message">{error}</div>}
           </div>
         )}
       </div>

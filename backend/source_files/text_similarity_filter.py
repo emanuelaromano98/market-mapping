@@ -3,8 +3,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import json
 
 
-def filter_reports():
-    model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+def filter_reports(model, threshold):
+    model = SentenceTransformer(model)
 
     reports = json.load(open("output_files/reports.json", "r"))
     report_texts = [report['report'] for report in reports]
@@ -25,7 +25,7 @@ def filter_reports():
                 embeddings[j].cpu().numpy().reshape(1, -1)
             )[0][0]
             
-            if similarity > 0.85:
+            if similarity > threshold:
                 removed_reports_idx.append(j)
 
     reports = [report for i, report in enumerate(reports) if i not in removed_reports_idx]
@@ -33,4 +33,4 @@ def filter_reports():
     with open("output_files/reports.json", "w") as f:
         json.dump(reports, f, indent=4)
 
-    print(f"Removed {len(removed_reports_idx)} reports")
+    print(f"Removed {len(removed_reports_idx)} reports due to similarity")

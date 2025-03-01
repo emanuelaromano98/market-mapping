@@ -3,8 +3,7 @@ import os
 import json
 
 
-def generate_report(topic, client):
-
+def generate_report(topic, client, model):
     class ReportGeneration(BaseModel):
         report: str
         sources: list[str]
@@ -18,9 +17,8 @@ def generate_report(topic, client):
             while i < len(prompt) and (prompt[i].isdigit() or prompt[i] in '. '):
                 i += 1
             prompt = "Question: " + prompt[i:].strip()
-            print(f"Generating report for {topic} with prompt: {prompt}")
         completion = client.beta.chat.completions.parse(
-            model="gpt-4o-2024-08-06",
+            model=model,
             messages=[
                 {"role": "system", "content": "You are a Report Generation GPT. Generate a report on the given prompt. Remember the focus is on the {topic}."},
                 {"role": "user", "content": "Generate a report on the following prompt: " + prompt},

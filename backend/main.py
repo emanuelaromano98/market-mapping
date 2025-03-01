@@ -5,49 +5,114 @@ from source_files.text_similarity_filter import filter_reports
 from dotenv import load_dotenv
 import os
 from openai import OpenAI
+from fastapi import FastAPI, WebSocket, Request, WebSocketDisconnect
+from pydantic import BaseModel
+import glob
+import uvicorn
+import asyncio
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.routing import APIRoute
 
-def clear_output_files(file_paths):
-    for file_path in file_paths:
+
+app = FastAPI()
+
+# Add CORS middleware BEFORE any routes
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # More permissive for development
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def send_message(self, message: str):
+        disconnected = []
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except WebSocketDisconnect:
+                disconnected.append(connection)
+            except Exception:
+                disconnected.append(connection)
+        
+        # Clean up disconnected connections
+        for conn in disconnected:
+            self.disconnect(conn)
+
+manager = ConnectionManager()
+
+@app.websocket("/ws/status")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
+async def send_status_update(message: str):
+    await manager.send_message(message)
+
+def clear_output_files(pattern):
+    files = glob.glob(pattern)
+    for file_path in files:
         if os.path.exists(file_path):
             os.remove(file_path)
 
-os.makedirs('output_files', exist_ok=True)
+class IndustryRequest(BaseModel):
+    industry: str
+    topics: list[str]
+    model: str = "gpt-4o-2024-08-06"
+    threshold: float = 0.85
+    api_key: str
 
-file_paths = [
-    "output_files/reports.json",
-    "output_files/report.md",
-    "output_files/output_prompts.txt"
-]
+@app.post("/generate-report")
+async def generate_industry_report(request: IndustryRequest):
+    clear_output_files("output_files/*")
+    client = OpenAI(api_key=request.api_key)
+    
+    await send_status_update("Starting report generation...")
 
-clear_output_files(file_paths)
+    for topic in request.topics:
+        await send_status_update(f"Generating prompt for {topic}...")
+        generate_prompt(request.industry, topic, client, request.model)
+        
+        await send_status_update(f"Generating report for {topic}...")
+        generate_report(topic, client, request.model)
+
+    await send_status_update("Filtering reports...")
+    filter_reports(request.model, request.threshold)
+
+    try:
+        with open("output_files/reports.json", "r") as f:
+            reports = f.read()
+        if not reports:
+            await send_status_update("No reports generated")
+            return {"message": "No reports generated"}
+    except FileNotFoundError:
+        await send_status_update("No reports generated")
+        return {"message": "No reports generated"}
+
+    await send_status_update("Generating Markdown...")
+    generate_markdown(request.topics, reports)
+
+    await send_status_update("Report generated successfully!")
+    return {"message": "Report generated successfully"}
 
 
-industry = input("Enter the industry: ")
-topics = input("Enter the topics (separated by commas): ")
 
-
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-
-for topic in topics.split(","):
-    print(f"Generating prompts for {topic}")
-    generate_prompt(industry, topic, client)
-    print(f"Generating report for {topic}")
-    generate_report(topic, client)
-    print(f"Finished {topic}")
-    print("--------------------------------")
-
-filter_reports()
-
-try:
-    with open("output_files/reports.json", "r") as f:
-        reports = f.read()
-    if not reports:
-        print("No reports generated")
-        exit()
-except FileNotFoundError:
-    print("No reports generated") 
-    exit()
-
-generate_markdown(topics, reports)
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

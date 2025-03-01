@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-def generate_prompt(industry, topic, client):
+def generate_prompt(industry, topic, client, model):
     class PromptGeneration(BaseModel):
         input_prompt: str
         improved_prompt: str
@@ -10,7 +10,7 @@ def generate_prompt(industry, topic, client):
     prompt = f"Generate a list of prompts to generate an industry report on the {industry} industry. Focus on {topic}"
 
     completion = client.beta.chat.completions.parse(
-        model="gpt-4o-2024-08-06",
+        model=model,
         messages=[
             {"role": "system", "content": "You are a Prompt Engineer GPT. Improve the given prompt."},
             {"role": "user", "content": "Improve the following prompt: " + prompt},

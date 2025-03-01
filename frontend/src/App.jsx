@@ -14,6 +14,7 @@ function App() {
   const [status, setStatus] = useState("");
   const [formSubmittedClicked, setFormSubmittedClicked] = useState(false)
   const [submitError, setSubmitError] = useState("")
+  const [reportGenerated, setReportGenerated] = useState(false)
   
   const baseAPIUrl = "http://localhost:8000"
   
@@ -90,16 +91,36 @@ function App() {
       })
       const data = await response.json()
       console.log(data)
+      setReportGenerated(true)
     } catch (error) {
       console.error("Error in report generation:", error)
     }
   }
 
-  
+  const handleDownloadReport = (format) => {
+    const url = `${baseAPIUrl}/download-report?format=${format}`
+    window.open(url, '_blank')
+  }
+
+  const handleReset = () => {
+    setReportGenerated(false)
+    setFormSubmittedClicked(false)
+    setFormSubmitted(false)
+    setIndustry("")
+    setTopics([])
+    setTopic("")
+    setModel("gpt-4o-2024-08-06")
+    setThreshold(0.85)
+    setApiKey("")
+    setError("")
+    setStatus("")
+    setSubmitError("")
+  }
+
 
   return (
     <div className="general-container">
-      <h1>Industry Report Generator</h1>
+      <h1>Market Mapping Generator</h1>
       <div className="app-container">
         <form>
           <label>
@@ -202,15 +223,37 @@ function App() {
           <button className="generate-report-button" onClick={(e) => handleSubmitForm(e)} type="submit">Generate Report</button>
           {submitError && <div className="error">{submitError}</div>}
         </form>  
-        {formSubmitted && (
-          <div className="report-container">
-            <h3>Report Generation Status</h3>
-            <div className="status-message">
-              {status || "Initializing..."}
-            </div>
-          </div>
-        )}
+        <div className="report-status-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'left', padding: '10px', borderRadius: '10px' }}>
+          {formSubmitted && (
+            <div className="report-container">
+              <h3>Report Generation Status</h3>
+              <div className="status-message">
+                {status || "Initializing..."}
+              </div>
+              {reportGenerated && (
+                <div className="download-report-container-outer">
+                  <h4>Download File</h4>
+                  <div className="download-report-container-inner">
+                    <button onClick={() => handleDownloadReport("html")} className="download-report-button">HTML</button>
+                    <button onClick={() => handleDownloadReport("pdf")} className="download-report-button">PDF</button>
+                    <button onClick={() => handleDownloadReport("markdown")} className="download-report-button">Markdown</button>
+                  </div>
+                </div>
+              )}
+              </div>
+          )} 
+          {reportGenerated && (
+            <button 
+              onClick={() => handleReset()}
+              className="reset-button"
+            style={{ alignSelf: 'flex-start', marginTop: '10px' }}
+          >
+              Reset
+            </button>
+          )}
+        </div>
       </div>
+     
     </div>
   )
 }

@@ -2,17 +2,18 @@ from source_files.report_generation import generate_report
 from source_files.markdown_generation import generate_markdown
 from source_files.prompt_generation import generate_prompt
 from source_files.text_similarity_filter import filter_reports
+from source_files.file_converter import convert_markdown_to_all_formats
 from dotenv import load_dotenv
 import os
 from openai import OpenAI
-from fastapi import FastAPI, WebSocket, Request, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, Request, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel
 import glob
 import uvicorn
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
-
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
@@ -108,11 +109,39 @@ async def generate_industry_report(request: IndustryRequest):
 
     await send_status_update("Generating Markdown...")
     generate_markdown(request.topics, reports)
+    
+    markdown_path = "backend/output_files/report.md"
+    html_success, pdf_success = convert_markdown_to_all_formats(markdown_path)
+    
+    if not html_success:
+        await send_status_update("Warning: HTML conversion failed")
+    if not pdf_success:
+        await send_status_update("Warning: PDF conversion failed")
 
     await send_status_update("Report generated successfully!")
     return {"message": "Report generated successfully"}
 
-
+@app.get("/download-report")
+async def download_report(format: str):
+    file_mapping = {
+        "html": ("backend/output_files/report.html", "text/html"),
+        "pdf": ("backend/output_files/report.pdf", "application/pdf"),
+        "markdown": ("backend/output_files/report.md", "text/markdown")
+    }
+    
+    if format not in file_mapping:
+        raise HTTPException(status_code=400, detail="Invalid format specified")
+    
+    file_path, content_type = file_mapping[format]
+    
+    try:
+        return FileResponse(
+            path=file_path,
+            media_type=content_type,
+            filename=f"report.{format}"
+        )
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Report file in {format} format not found")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
